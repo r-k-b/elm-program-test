@@ -57,7 +57,7 @@ boolToString b =
 testView : String -> Html String
 testView model =
     Html.div []
-        [ Html.span [] [ Html.text model ]
+        [ Html.span [ Html.Attributes.attribute "contains-double-quote" "\"" ] [ Html.text model ]
         , Html.button [ onClick "CLICK" ] [ Html.text "Click Me" ]
         , Html.node "strange" [ Html.Events.on "odd" Json.Decode.string ] []
         , Html.textarea [ handleInput "textarea" ] []
@@ -187,6 +187,58 @@ all =
                 start
                     |> assertView
                         (Query.find [ Selector.tag "span" ] >> Query.has [ Selector.text "INIT" ])
+        , test "can report failure to select an element when an attribute contains the \" character" <|
+            \_ ->
+                start
+                    |> ProgramTest.clickButton "that does not exist"
+                    |> ProgramTest.done
+                    |> expectFailure
+                        [ """▼ Query.fromHtml"""
+                        , """"""
+                        , """    <div>"""
+                        , """        <span contains-double-quote="&quot;">INIT</span>"""
+                        , """        <button>"""
+                        , """            Click Me"""
+                        , """        </button>"""
+                        , """        <strange></strange>"""
+                        , """        <textarea></textarea>"""
+                        , """        <div>...</div>"""
+                        , """        <div>"""
+                        , """            <div id="button-a">"""
+                        , """                <button>"""
+                        , """                    Ambiguous click"""
+                        , """                </button>"""
+                        , """            </div>"""
+                        , """            <div id="button-b">"""
+                        , """                <button>"""
+                        , """                    Ambiguous click"""
+                        , """                </button>"""
+                        , """            </div>"""
+                        , """        </div>"""
+                        , """    </div>"""
+                        , """"""
+                        , """"""
+                        , """▼ ProgramTest.clickButton "that does not exist\""""
+                        , """"""
+                        , """Expected one of the following to exist:"""
+                        , """- <button> with text"""
+                        , """    ✓ has tag "button\""""
+                        , """    ✗ has containing [ text "that does not exist" ]"""
+                        , """- <button> with <img> with alt text"""
+                        , """    ✓ has tag "button\""""
+                        , """    ✗ has containing [ tag "img", attribute "alt" "that does not exist" ]"""
+                        , """- <button> with aria-label"""
+                        , """    ✓ has tag "button\""""
+                        , """    ✗ has attribute "aria-label" "that does not exist\""""
+                        , """- any element with role="button" and text"""
+                        , """    ✗ has attribute "role" "button\""""
+                        , """- any element with role="button" and aria-label"""
+                        , """    ✗ has attribute "role" "button\""""
+                        , """- <form> with submit <button> with text"""
+                        , """    ✗ has tag "form\""""
+                        , """- <form> with submit <input> with value"""
+                        , """    ✗ has tag "form\""""
+                        ]
         , test "can create with navigation and JSON string flags" <|
             \() ->
                 ProgramTest.createApplication
@@ -278,7 +330,7 @@ all =
                         , """▼ Query.fromHtml"""
                         , """"""
                         , """    <div>"""
-                        , """        <span>"""
+                        , """        <span contains-double-quote=\"\"\">""" -- should be "&quot;"?
                         , """            INIT"""
                         , """        </span>"""
                         , """        <button>"""
